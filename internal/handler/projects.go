@@ -8,6 +8,10 @@ import (
 )
 
 func (h *Handler) GetProjects(c *gin.Context) {
+	//_, err := h.AuthUser(c)
+	//if err != nil {
+	//	return
+	//}
 	var limit int
 	var offset int
 
@@ -29,6 +33,10 @@ func (h *Handler) GetProjects(c *gin.Context) {
 	respfmt.OK(c, Projects)
 }
 func (h *Handler) GetProjectByID(c *gin.Context) {
+	//_, err := h.AuthUser(c)
+	//if err != nil {
+	//	return
+	//}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id == 0 {
 		respfmt.BadRequest(c, "not correct id")
@@ -42,17 +50,22 @@ func (h *Handler) GetProjectByID(c *gin.Context) {
 	respfmt.OK(c, ProjectModel)
 }
 func (h *Handler) AddProjects(c *gin.Context) {
+	user, err := h.AuthUser(c)
+	if err != nil {
+		return
+	}
+	if user.UserRoleID == 2 {
+		respfmt.BadRequest(c, "user have not permission")
+		return
+	}
+
 	var oneProjects models.Project
 	if err := c.BindJSON(&oneProjects); err != nil {
 		respfmt.BadRequest(c, err.Error())
 		return
 	}
 
-	userID := GetAuthUser(c)
-	if userID == 0 {
-		respfmt.BadRequest(c, "not auth")
-	}
-	oneProjects.AuthorID = userID
+	oneProjects.AuthorID = user.ID
 	oneProjects.FileObjectID = "{1}"
 
 	//formFile, err := c.FormFile("file")
@@ -75,6 +88,15 @@ func (h *Handler) AddProjects(c *gin.Context) {
 	respfmt.OK(c, ProjectModel)
 }
 func (h *Handler) DeleteProjects(c *gin.Context) {
+	user, err := h.AuthUser(c)
+	if err != nil {
+		return
+	}
+	if user.UserRoleID == 2 {
+		respfmt.BadRequest(c, "user have not permission")
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id == 0 {
 		respfmt.BadRequest(c, "not correct id")
@@ -87,15 +109,19 @@ func (h *Handler) DeleteProjects(c *gin.Context) {
 	respfmt.OK(c, "ok")
 }
 func (h *Handler) UpdateProjects(c *gin.Context) {
+	user, err := h.AuthUser(c)
+	if err != nil {
+		return
+	}
+	if user.UserRoleID == 2 {
+		respfmt.BadRequest(c, "user have not permission")
+		return
+	}
+
 	var oneProjects models.Project
 	if err := c.BindJSON(&oneProjects); err != nil {
 		respfmt.BadRequest(c, err.Error())
 		return
-	}
-
-	userID := GetAuthUser(c)
-	if userID == 0 {
-		respfmt.BadRequest(c, "not auth")
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
@@ -105,7 +131,7 @@ func (h *Handler) UpdateProjects(c *gin.Context) {
 	}
 
 	oneProjects.ID = id
-	oneProjects.AuthorID = userID
+	oneProjects.AuthorID = user.ID
 	//formFile, err := c.FormFile("file")
 	//if err != nil {
 	//	respfmt.BadRequest(c, err.Error())

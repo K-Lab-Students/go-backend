@@ -1,14 +1,21 @@
 begin;
 
+drop table t_user;
+drop table t_file_object;
+drop table t_projects;
+drop table t_news;
+
 create table if not exists t_user(
                              id serial not null primary key,
                              sname character varying(30),
                              name character varying(30),
                              pname character varying(30),
+                             email text,
+                             password text,
                              is_active boolean not null default true,
                              is_admin boolean not null default false,
                              is_member boolean not null default false,
-                             create_date date not null,
+                             create_date date not null default now(),
                              file_object_id integer
 )
     WITH (OIDS = FALSE);

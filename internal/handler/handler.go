@@ -25,10 +25,11 @@ func New(News *news.UseCase, Projects *projects.UseCase, Users *users.UseCase) *
 func (h *Handler) InitRoutes() *gin.Engine {
 	r := gin.Default()
 	r.Static("/photo", "./photo")
-
-	r.Use(cors.Default())
-	r.Use(AuthUser)
-
+	//r.Use(cors.Default())
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowHeaders = append(config.AllowHeaders, "user_id", "x-token")
+	r.Use(cors.New(config))
 	r.GET("news", h.GetNews)
 	r.GET("news/:id", h.GetNewByID)
 	r.POST("news", h.AddNews)
@@ -42,29 +43,9 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	r.PUT("projects/:id", h.UpdateProjects)
 
 	r.GET("users", h.GetUsers)
-	r.GET("users/:id")
-	r.DELETE("users/:id")
-	r.PUT("users/:id")
 
-	r.POST("register")
-	r.POST("login")
+	r.POST("register", h.Registration)
+	r.POST("login", h.Login)
+
 	return r
-}
-
-func AuthUser(c *gin.Context) {
-	c.Set("user_id", 1)
-}
-
-func GetAuthUser(c *gin.Context) int {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		return 0
-	}
-
-	userIdInt, exists := userID.(int)
-	if !exists {
-		return 0
-	}
-
-	return userIdInt
 }

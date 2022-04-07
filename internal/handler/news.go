@@ -8,6 +8,10 @@ import (
 )
 
 func (h *Handler) GetNews(c *gin.Context) {
+	//if _, err := h.AuthUser(c); err != nil {
+	//	return
+	//}
+
 	var limit int
 	var offset int
 
@@ -29,6 +33,10 @@ func (h *Handler) GetNews(c *gin.Context) {
 	respfmt.OK(c, news)
 }
 func (h *Handler) GetNewByID(c *gin.Context) {
+	//if _, err := h.AuthUser(c); err != nil {
+	//	return
+	//}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id == 0 {
 		respfmt.BadRequest(c, "not correct id")
@@ -42,17 +50,21 @@ func (h *Handler) GetNewByID(c *gin.Context) {
 	respfmt.OK(c, newModel)
 }
 func (h *Handler) AddNews(c *gin.Context) {
+	user, err := h.AuthUser(c)
+	if err != nil {
+		return
+	}
+	if user.UserRoleID == 2 {
+		respfmt.BadRequest(c, "user have not permission")
+		return
+	}
 	var oneNews models.New
 	if err := c.BindJSON(&oneNews); err != nil {
 		respfmt.BadRequest(c, err.Error())
 		return
 	}
 
-	userID := GetAuthUser(c)
-	if userID == 0 {
-		respfmt.BadRequest(c, "not auth")
-	}
-	oneNews.AuthorID = userID
+	oneNews.AuthorID = user.ID
 	oneNews.FileObjectID = "{1}"
 	//formFile, err := c.FormFile("file")
 	//if err != nil {
@@ -74,6 +86,15 @@ func (h *Handler) AddNews(c *gin.Context) {
 	respfmt.OK(c, newModel)
 }
 func (h *Handler) DeleteNews(c *gin.Context) {
+	user, err := h.AuthUser(c)
+	if err != nil {
+		return
+	}
+	if user.UserRoleID == 2 {
+		respfmt.BadRequest(c, "user have not permission")
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id == 0 {
 		respfmt.BadRequest(c, "not correct id")
@@ -86,6 +107,14 @@ func (h *Handler) DeleteNews(c *gin.Context) {
 	respfmt.OK(c, "ok")
 }
 func (h *Handler) UpdateNews(c *gin.Context) {
+	user, err := h.AuthUser(c)
+	if err != nil {
+		return
+	}
+	if user.UserRoleID == 2 {
+		respfmt.BadRequest(c, "user have not permission")
+		return
+	}
 	var oneNews models.New
 	if err := c.BindJSON(&oneNews); err != nil {
 		respfmt.BadRequest(c, err.Error())
@@ -98,13 +127,8 @@ func (h *Handler) UpdateNews(c *gin.Context) {
 		return
 	}
 
-	userID := GetAuthUser(c)
-	if userID == 0 {
-		respfmt.BadRequest(c, "not auth")
-		return
-	}
 	oneNews.ID = id
-	oneNews.AuthorID = userID
+	oneNews.AuthorID = user.ID
 
 	//formFile, err := c.FormFile("file")
 	//if err != nil {

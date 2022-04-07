@@ -23,17 +23,29 @@ type Project struct {
 	Files        []File `json:"files,omitempty" db:"-" `
 }
 type User struct {
-	ID           int    `json:"id" db:"id"`
-	Sname        string `json:"sname" db:"sname"`
-	Name         string `json:"name" db:"name"`
-	Pname        string `json:"pname" db:"pname"`
-	Body         string `json:"body" db:"body"`
-	IsActive     bool   `json:"is_active" db:"is_active"`
-	IsAdmin      bool   `json:"is_admin" db:"is_admin"`
-	IsMember     bool   `json:"is_member" db:"is_member"`
-	CreateDate   string `json:"create_date" db:"create_date"`
-	FileObjectID string `json:"file_object_id" db:"file_object_id"`
-	Files        []File `json:"files,omitempty" db:"-" `
+	ID           int     `json:"id" db:"id"`
+	Sname        *string `json:"sname" db:"sname"`
+	Name         *string `json:"name" db:"name"`
+	Pname        *string `json:"pname" db:"pname"`
+	Email        string  `json:"email" db:"email"`
+	Password     string  `json:"password" db:"password"`
+	IsActive     bool    `json:"is_active" db:"is_active"`
+	IsAdmin      bool    `json:"is_admin" db:"is_admin"`
+	IsMember     bool    `json:"is_member" db:"is_member"`
+	CreateDate   *string `json:"create_date" db:"create_date"`
+	FileObjectID *string `json:"file_object_id" db:"file_object_id"`
+	UserRoleID   int     `json:"user_role_id" db:"-"`
+	Files        []File  `json:"files,omitempty" db:"-" `
+}
+type Auth struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+type Md5 struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	IsAdmin  bool   `json:"is_admin"`
+	IsMember bool   `json:"is_member"`
 }
 type File struct {
 	ID         int    `json:"id" db:"id"`
