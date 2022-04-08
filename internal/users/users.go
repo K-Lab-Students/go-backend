@@ -2,6 +2,7 @@ package users
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
 	"lrm-backend/internal/files"
@@ -39,12 +40,12 @@ func (uc *UseCase) GetUsers(limit, offset int) ([]models.User, error) {
 func (uc *UseCase) Registration(a *models.Auth) (models.User, error) {
 	var userID int
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(a.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(a.Body.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return models.User{}, err
 	}
 
-	if err := uc.db.Get(&userID, `insert into t_user(email,password) VALUES ($1,$2) returning id`, a.Email, hashedPassword); err != nil {
+	if err := uc.db.Get(&userID, `insert into t_user(email,password) VALUES ($1,$2) returning id`, a.Body.Email, hashedPassword); err != nil {
 		return models.User{}, err
 	}
 
@@ -62,12 +63,13 @@ func (uc *UseCase) Login(a *models.Auth) (models.User, error) {
 	//	return models.User{}, err
 	//}
 
+	fmt.Println(a.Body.Email)
 	var l Login
-	if err := uc.db.Get(&l, `select id, password from t_user where email LIKE $1`, a.Email); err != nil {
+	if err := uc.db.Get(&l, `select id, password from t_user where email LIKE $1`, a.Body.Email); err != nil {
 		return models.User{}, errors.New("Ошибка получения данных пользователя")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(l.Password), []byte(a.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(l.Password), []byte(a.Body.Password)); err != nil {
 		return models.User{}, errors.New("Указан неверный пароль")
 	}
 

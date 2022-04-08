@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"io/ioutil"
 	"lrm-backend/internal/models"
 	"lrm-backend/pkg/respfmt"
 	"strconv"
@@ -75,9 +77,16 @@ func getMd5ByUserStruct(md models.Md5) string {
 }
 
 func (h *Handler) Registration(c *gin.Context) {
+	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		respfmt.BadRequest(c, "Данные пользователя не корректны")
+		return
+	}
+
 	var a models.Auth
-	if err := c.BindJSON(&a); err != nil {
+	if err := json.Unmarshal(jsonData, &a); err != nil {
 		respfmt.BadRequest(c, err.Error())
+		return
 	}
 
 	user, err := h.Users.Registration(&a)
@@ -114,8 +123,14 @@ func (h *Handler) Registration(c *gin.Context) {
 	})
 }
 func (h *Handler) Login(c *gin.Context) {
+	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		respfmt.BadRequest(c, "Данные пользователя не корректны")
+		return
+	}
+
 	var a models.Auth
-	if err := c.BindJSON(&a); err != nil {
+	if err := json.Unmarshal(jsonData, &a); err != nil {
 		respfmt.BadRequest(c, err.Error())
 		return
 	}

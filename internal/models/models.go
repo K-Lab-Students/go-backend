@@ -38,8 +38,10 @@ type User struct {
 	Files        []File  `json:"files,omitempty" db:"-" `
 }
 type Auth struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Body struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	} `json:"body"`
 }
 type Md5 struct {
 	Email    string `json:"email"`
