@@ -2,7 +2,6 @@ package users
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
 	"lrm-backend/internal/files"
@@ -25,7 +24,7 @@ func (uc *UseCase) GetUsers(limit, offset int) ([]models.User, error) {
 	}
 
 	for i := range Users {
-		if *Users[i].FileObjectID != "" {
+		if Users[i].FileObjectID != nil && *Users[i].FileObjectID != "" {
 			filesPathes, err := uc.file.GetFiles(*Users[i].FileObjectID)
 			if err != nil {
 				return nil, err
@@ -64,7 +63,6 @@ func (uc *UseCase) Login(a *models.Auth) (models.User, error) {
 	//}
 
 	var l Login
-	fmt.Println("aa:", a.Email)
 	if err := uc.db.Get(&l, `select id, password from t_user where email LIKE $1`, a.Email); err != nil {
 		return models.User{}, errors.New("Ошибка получения данных пользователя")
 	}
