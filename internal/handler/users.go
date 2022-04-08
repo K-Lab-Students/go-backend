@@ -1,7 +1,8 @@
 package handler
 
 import (
-	"encoding/json"
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,10 @@ import (
 	"io/ioutil"
 	"lrm-backend/internal/models"
 	"lrm-backend/pkg/respfmt"
+	"math/rand"
 	"strconv"
+	"strings"
+	"time"
 )
 
 func (h *Handler) AuthUser(c *gin.Context) (models.User, error) {
@@ -31,8 +35,6 @@ func (h *Handler) AuthUser(c *gin.Context) (models.User, error) {
 		IsAdmin:  user.IsAdmin,
 		IsMember: user.IsMember,
 	})
-	fmt.Println(token)
-	fmt.Println(token2)
 	if err := bcrypt.CompareHashAndPassword([]byte(token), []byte(token2)); err != nil {
 		respfmt.BadRequest(c, "you token is not correct")
 		return models.User{}, errors.New("you token is not correct")
@@ -69,22 +71,91 @@ func (h *Handler) GetUsers(c *gin.Context) {
 	}
 	respfmt.OK(c, news)
 }
+func (h *Handler) GetUserByID(c *gin.Context) {
+	user, err := h.AuthUser(c)
+	if err != nil {
+		return
+	}
 
+	news, err := h.Users.GetUserByID(user.ID)
+	if err != nil {
+		respfmt.InternalServer(c, err.Error())
+		return
+	}
+	respfmt.OK(c, news)
+}
+func (h *Handler) UpdateUser(c *gin.Context) {
+	user, err := h.AuthUser(c)
+	if err != nil {
+		return
+	}
+	var profile models.UserUpdateProfile
+	if err := c.BindJSON(&profile); err != nil {
+		respfmt.BadRequest(c, err.Error())
+		return
+	}
+	profile.ID = user.ID
+
+	fileName := strconv.Itoa(int(time.Now().Unix()) + rand.Intn(100000))
+	if profile.File != nil && *profile.File != "" {
+		fmt.Println(1)
+		filePath, err := saveImageToDisk(fileName, *profile.File)
+		if err != nil {
+			respfmt.BadRequest(c, err.Error())
+			return
+		}
+		fmt.Println(2)
+		id, err := h.Users.SaveUserFile(filePath)
+		if err != nil {
+			respfmt.BadRequest(c, err.Error())
+			return
+		}
+		fmt.Println("id:", id)
+		profile.FileID = &id
+	}
+
+	if profile.FileID == nil {
+		profile.FileID = user.FileObjectID
+	}
+
+	if profile.CompetitionsID == nil {
+		profile.CompetitionsID = user.CompetitionsID
+	}
+
+	fmt.Printf("\n%+v\n", profile)
+
+	if err := h.Users.UpdateUserProfile(&profile); err != nil {
+		respfmt.InternalServer(c, err.Error())
+		return
+	}
+	respfmt.OK(c, "ok")
+}
+func saveImageToDisk(fileNameBase, data string) (string, error) {
+	idx := strings.Index(data, ";base64,")
+	if idx < 0 {
+		return "", fmt.Errorf("is not correct file")
+	}
+	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(data[idx+8:]))
+	buff := bytes.Buffer{}
+	_, err := buff.ReadFrom(reader)
+	if err != nil {
+		return "", err
+	}
+	fileName := "./photo/" + fileNameBase + ".jpeg"
+	if err := ioutil.WriteFile(fileName, buff.Bytes(), 0777); err != nil {
+		return "", err
+	}
+
+	return "/photo/" + fileNameBase + ".jpeg", err
+}
 func getMd5ByUserStruct(md models.Md5) string {
 	strmd5 := md.Email + md.Password + strconv.FormatBool(md.IsAdmin) + strconv.FormatBool(md.IsMember)
-	fmt.Println("strmd5", strmd5)
 	return strmd5
 }
 
 func (h *Handler) Registration(c *gin.Context) {
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		respfmt.BadRequest(c, "Данные пользователя не корректны")
-		return
-	}
-
 	var a models.Auth
-	if err := json.Unmarshal(jsonData, &a); err != nil {
+	if err := c.BindJSON(&a); err != nil {
 		respfmt.BadRequest(c, err.Error())
 		return
 	}
@@ -123,14 +194,8 @@ func (h *Handler) Registration(c *gin.Context) {
 	})
 }
 func (h *Handler) Login(c *gin.Context) {
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		respfmt.BadRequest(c, "Данные пользователя не корректны")
-		return
-	}
-
 	var a models.Auth
-	if err := json.Unmarshal(jsonData, &a); err != nil {
+	if err := c.BindJSON(&a); err != nil {
 		respfmt.BadRequest(c, err.Error())
 		return
 	}

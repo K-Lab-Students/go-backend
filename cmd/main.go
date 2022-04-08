@@ -2,10 +2,13 @@ package main
 
 import (
 	"go.uber.org/zap"
+	"lrm-backend/internal/competitions"
+	Facultys "lrm-backend/internal/faculties"
 	"lrm-backend/internal/files"
 	"lrm-backend/internal/handler"
 	"lrm-backend/internal/news"
 	"lrm-backend/internal/projects"
+	studyplace "lrm-backend/internal/study_place"
 	"lrm-backend/internal/users"
 	"lrm-backend/pkg/database"
 )
@@ -21,11 +24,14 @@ func main() {
 
 	fileUC := files.NewUseCase(db)
 
-	usersUC := users.NewUsersUseCase(db, fileUC)
+	studyPlaceUC := studyplace.NewStudyPlaceUseCase(db)
+	facultiesUC := Facultys.NewFacultyUseCase(db)
+	competitionsUC := competitions.NewCompetitionUseCase(db, fileUC)
+	usersUC := users.NewUsersUseCase(db, fileUC, competitionsUC, facultiesUC)
 	newsUC := news.NewUseCase(db, fileUC)
 	projectsUC := projects.NewProjectUseCase(db, fileUC)
 
-	h := handler.New(newsUC, projectsUC, usersUC)
+	h := handler.New(newsUC, projectsUC, usersUC, competitionsUC, facultiesUC, studyPlaceUC)
 	server := h.InitRoutes()
 
 	server.Run()
