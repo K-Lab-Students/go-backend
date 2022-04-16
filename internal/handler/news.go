@@ -78,9 +78,7 @@ func (h *Handler) AddNews(c *gin.Context) {
 	}
 
 	if oneNews.ID != 0 {
-		if err := h.News.DeleteFiles(oneNews.ID, []string{}); err != nil {
-			respfmt.InternalServer(c, err.Error())
-		}
+		h.News.DeleteFiles(oneNews.ID, []string{})
 	}
 
 	var fileObjects []string
@@ -143,9 +141,7 @@ func (h *Handler) DeleteNews(c *gin.Context) {
 		respfmt.BadRequest(c, "not correct id")
 	}
 
-	if err := h.News.DeleteFiles(id, []string{}); err != nil {
-		respfmt.InternalServer(c, err.Error())
-	}
+	h.News.DeleteFiles(id, []string{})
 	if err := h.News.DeleteNew(id); err != nil {
 		respfmt.InternalServer(c, err.Error())
 		return
@@ -240,9 +236,7 @@ func (h *Handler) UpdateNews(c *gin.Context) {
 	}
 
 	if oneNews.ID != 0 {
-		if err := h.News.DeleteFiles(oneNews.ID, dontDeleteFiles); err != nil {
-			respfmt.InternalServer(c, err.Error())
-		}
+		h.News.DeleteFiles(oneNews.ID, dontDeleteFiles)
 	}
 
 	oneNews.FileObjectID = "{" + strings.Join(fileObjects, ",") + "}"

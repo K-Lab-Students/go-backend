@@ -162,9 +162,7 @@ func (uc *UseCase) DeleteFiles(id int) error {
 		return err
 	}
 
-	if err := os.Remove("." + f.FilePath); err != nil {
-		return err
-	}
+	os.Remove("." + f.FilePath)
 
 	if _, err := uc.db.Exec(`delete from t_file_object where id = $1`, fileId); err != nil {
 		return err

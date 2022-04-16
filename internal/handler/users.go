@@ -98,10 +98,8 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 
 	fileName := strconv.Itoa(int(time.Now().Unix()) + rand.Intn(100000))
 	if profile.File != nil && *profile.File != "" {
-		if err := h.Users.DeleteFiles(profile.ID); err != nil {
-			respfmt.BadRequest(c, err.Error())
-			return
-		}
+		h.Users.DeleteFiles(profile.ID)
+
 		filePath, err := saveImageToDisk(fileName, *profile.File)
 		if err != nil {
 			respfmt.BadRequest(c, err.Error())

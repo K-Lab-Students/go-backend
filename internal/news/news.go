@@ -22,7 +22,7 @@ func (uc *UseCase) GetNews(limit, offset int) ([]models.New, error) {
 	news := make([]models.New, 0)
 	if err := uc.db.Select(&news, `select t_news.*,tu.name as author_name from t_news
 												join t_user tu on t_news.author_id = tu.id
-												limit $1 
+												order by create_date desc,id desc limit $1 
 												offset $2`, limit, offset); err != nil {
 		return nil, err
 	}
@@ -62,6 +62,9 @@ func (uc *UseCase) AddNew(n *models.New) (models.New, error) {
 	var id int
 
 	n.CreateDate = time.Now().Format("2006-01-02")
+	if n.FileObjectID == "" || n.FileObjectID == "{}" {
+		n.FileObjectID = "{1}"
+	}
 	if n.ID == 0 {
 		if err := uc.db.QueryRow(`insert into t_news(name,body,author_id,is_active,is_main,create_date,file_object_id) values($1,$2,$3,$4,$5,$6,$7) returning id`, n.Name, n.Body, n.AuthorID, n.IsActive, n.IsMain, n.CreateDate, n.FileObjectID).Scan(&id); err != nil {
 			return models.New{}, err
