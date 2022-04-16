@@ -5,6 +5,7 @@ type New struct {
 	Name         string `json:"name" db:"name"`
 	Body         string `json:"body" db:"body"`
 	AuthorID     int    `json:"author_id" db:"author_id"`
+	AuthorName   string `json:"author_name" db:"author_name"`
 	IsActive     bool   `json:"is_active" db:"is_active"`
 	IsMain       bool   `json:"is_main" db:"is_main"`
 	CreateDate   string `json:"create_date" db:"create_date"`

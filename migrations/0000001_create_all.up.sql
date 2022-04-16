@@ -69,7 +69,7 @@ create table if not exists t_news
     is_active      boolean not null default true,
     is_main        boolean not null default false,
     create_date    date    not null,
-    file_object_id integer[]
+    file_object_id integer[] default '{1}'
 )
     WITH (OIDS = FALSE);
 

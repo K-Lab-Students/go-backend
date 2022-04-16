@@ -4,6 +4,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"lrm-backend/internal/files"
 	"lrm-backend/internal/models"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -18,7 +20,10 @@ func NewUseCase(db *sqlx.DB, file *files.UseCase) *UseCase {
 
 func (uc *UseCase) GetNews(limit, offset int) ([]models.New, error) {
 	news := make([]models.New, 0)
-	if err := uc.db.Select(&news, `select * from t_news limit $1 offset $2`, limit, offset); err != nil {
+	if err := uc.db.Select(&news, `select t_news.*,tu.name as author_name from t_news
+												join t_user tu on t_news.author_id = tu.id
+												limit $1 
+												offset $2`, limit, offset); err != nil {
 		return nil, err
 	}
 
@@ -36,7 +41,9 @@ func (uc *UseCase) GetNews(limit, offset int) ([]models.New, error) {
 }
 func (uc *UseCase) GetNew(id int) (models.New, error) {
 	var newModel models.New
-	if err := uc.db.Get(&newModel, `select * from t_news where id = $1`, id); err != nil {
+	if err := uc.db.Get(&newModel, `select t_news.*,tu.name as author_name from t_news
+												join t_user tu on t_news.author_id = tu.id
+												where t_news.id = $1`, id); err != nil {
 		return models.New{}, err
 	}
 
@@ -60,7 +67,7 @@ func (uc *UseCase) AddNew(n *models.New) (models.New, error) {
 			return models.New{}, err
 		}
 	} else {
-		if err := uc.db.QueryRow(`update t_news set name = $1, body = $2,author_id = $3, is_active = $4,is_main = $5 where id = $6 returning id`, n.Name, n.Body, n.AuthorID, n.IsActive, n.IsMain, n.ID).Scan(&id); err != nil {
+		if err := uc.db.QueryRow(`update t_news set name = $1, body = $2,author_id = $3, is_active = $4,is_main = $5, file_object_id = $6 where id = $7 returning id`, n.Name, n.Body, n.AuthorID, n.IsActive, n.IsMain, n.FileObjectID, n.ID).Scan(&id); err != nil {
 			return models.New{}, err
 		}
 	}
@@ -76,5 +83,43 @@ func (uc *UseCase) DeleteNew(id int) error {
 	if _, err := uc.db.Exec(`delete from t_news where id = $1`, id); err != nil {
 		return err
 	}
+	return nil
+}
+func (uc *UseCase) DeleteFiles(id int, dontDeleteFiles []string) error {
+	var filesArr string
+	if err := uc.db.Get(&filesArr, `select file_object_id from t_news where id = $1`, id); err != nil {
+		return err
+	}
+
+	filesArr = strings.ReplaceAll(filesArr, "{", "")
+	filesArr = strings.ReplaceAll(filesArr, "}", "")
+
+	var f []models.File
+	if err := uc.db.Select(&f, `select * from t_file_object where id in (`+filesArr+`)`); err != nil {
+		return err
+	}
+
+	for i := range f {
+		breakFlag := false
+		for _, ddf := range dontDeleteFiles {
+			if f[i].FilePath == ddf {
+				breakFlag = true
+				break
+			}
+		}
+
+		if breakFlag {
+			continue
+		}
+
+		if err := os.Remove("." + f[i].FilePath); err != nil {
+			return err
+		}
+		if _, err := uc.db.Exec(`delete from t_file_object where id = $1`, f[i].ID); err != nil {
+			return err
+		}
+
+	}
+
 	return nil
 }

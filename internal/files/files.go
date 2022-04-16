@@ -1,6 +1,7 @@
 package files
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"lrm-backend/internal/models"
 	"os"
@@ -20,6 +21,7 @@ func (uc *UseCase) GetFiles(files string) ([]models.File, error) {
 	files = strings.ReplaceAll(files, "{", "")
 	files = strings.ReplaceAll(files, "}", "")
 
+	fmt.Println(files)
 	filesModels := make([]models.File, 0)
 	if err := uc.db.Select(&filesModels, `select id, file_path from t_file_object where id in (`+files+`)`); err != nil {
 		return nil, err

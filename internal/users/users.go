@@ -9,6 +9,7 @@ import (
 	Facultys "lrm-backend/internal/faculties"
 	"lrm-backend/internal/files"
 	"lrm-backend/internal/models"
+	"os"
 )
 
 type UseCase struct {
@@ -137,4 +138,37 @@ func (uc *UseCase) SaveUserFile(filePath string) (int, error) {
 		return 0, err
 	}
 	return id, nil
+}
+
+func (uc *UseCase) SearchFile(filePath string) (int, error) {
+	var fileID int
+	if err := uc.db.Get(&fileID, `select id from t_file_object where file_path LIKE $1`, filePath); err != nil {
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return fileID, nil
+}
+
+func (uc *UseCase) DeleteFiles(id int) error {
+	var fileId int
+	if err := uc.db.Get(&fileId, `select file_object_id from t_user where id = $1`, id); err != nil {
+		return err
+	}
+
+	var f models.File
+	if err := uc.db.Get(&f, `select * from t_file_object where id = $1`, fileId); err != nil {
+		return err
+	}
+
+	if err := os.Remove("." + f.FilePath); err != nil {
+		return err
+	}
+
+	if _, err := uc.db.Exec(`delete from t_file_object where id = $1`, fileId); err != nil {
+		return err
+	}
+
+	return nil
 }
