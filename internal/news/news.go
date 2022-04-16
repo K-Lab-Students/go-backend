@@ -103,6 +103,9 @@ func (uc *UseCase) DeleteFiles(id int, dontDeleteFiles []string) error {
 	}
 
 	for i := range f {
+		if f[i].ID == 1 {
+			continue
+		}
 		breakFlag := false
 		for _, ddf := range dontDeleteFiles {
 			if f[i].FilePath == ddf {
